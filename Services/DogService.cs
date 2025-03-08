@@ -1,69 +1,107 @@
 ﻿using Evaluacion2.Models;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace Evaluacion2.Services
 {
     public class DogService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _apiKey;
+        private readonly ILogger<DogService> _logger;
+        private readonly string _baseUrl = "https://dogapi.dog/api/v2/breeds";
 
-        public DogService(HttpClient httpClient, IConfiguration configuration)
+        public DogService(HttpClient httpClient, ILogger<DogService> logger)
         {
             _httpClient = httpClient;
-            _apiKey = configuration["DogApiKey"];
-            _httpClient.DefaultRequestHeaders.Add("x-api-key", _apiKey);
+            _logger = logger;
         }
 
-        public async Task<DogListResult> GetDogsAsync(int page = 1, int pageSize = 15)
+        public async Task<BreedResponse> GetBreedsAsync(int page = 1)
         {
             try
             {
-                var response = await _httpClient.GetStringAsync($"https://api.thedogapi.com/v1/images/search?page={page}&limit={pageSize}");
-                var dogs = JsonConvert.DeserializeObject<List<Dog>>(response);
-                return new DogListResult { Data = dogs };
+                var response = await _httpClient.GetAsync($"{_baseUrl}?page[number]={page}");
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var breedResponse = JsonConvert.DeserializeObject<BreedResponse>(content);
+
+                return breedResponse;
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"Error de HTTP: {ex.Message}");
+                _logger.LogError(ex, "Error de solicitud HTTP.");
                 return null;
             }
             catch (JsonException ex)
             {
-                Console.WriteLine($"Error de JSON: {ex.Message}");
+                _logger.LogError(ex, "Error de deserialización JSON.");
                 return null;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error inesperado: {ex.Message}");
+                _logger.LogError(ex, "Error inesperado.");
                 return null;
             }
         }
 
-        public async Task<Dog> GetDogDetailsAsync(string id)
+        public async Task<Breed> GetBreedDetailsAsync(string id)
         {
             try
             {
-                var response = await _httpClient.GetStringAsync($"https://api.thedogapi.com/v2/breeds/{id}");
-                var data = JsonConvert.DeserializeObject<Dog>(response);
+                var response = await _httpClient.GetAsync($"{_baseUrl}/{id}");
+                response.EnsureSuccessStatusCode();
 
-                return data;
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Respuesta de la API para {id}: {content}");
+
+                var breedDetailResponse = JsonConvert.DeserializeObject<BreedDetailResponse>(content);
+                _logger.LogInformation($"Objeto breedDetailResponse: {JsonConvert.SerializeObject(breedDetailResponse)}");
+
+                return breedDetailResponse?.Data;
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"Error de HTTP: {ex.Message}");
+                _logger.LogError(ex, "Error de solicitud HTTP.");
                 return null;
             }
             catch (JsonException ex)
             {
-                Console.WriteLine($"Error de JSON: {ex.Message}");
+                _logger.LogError(ex, "Error de deserialización JSON.");
                 return null;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error inesperado: {ex.Message}");
+                _logger.LogError(ex, "Error inesperado.");
                 return null;
             }
+        }
+
+        public async Task<string> GetImageUrlAsync(string breedName)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"https://api.thedogapi.com/v1/images/search?q={breedName}&limit=1");
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var images = JsonConvert.DeserializeObject<ImageResponse[]>(content);
+
+                return images?.Length > 0 ? images[0].Url : null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al obtener la URL de la imagen para {breedName}.");
+                return null;
+            }
+        }
+
+        private class ImageResponse
+        {
+            public string Url { get; set; }
         }
     }
 }
