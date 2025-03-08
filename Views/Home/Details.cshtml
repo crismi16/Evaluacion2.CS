@@ -1,21 +1,34 @@
-﻿@model Evaluacion2.Models.Dog
+﻿@model Evaluacion2.Models.Breed
 
 <div class="container mt-4">
-    <h1 class="text-center mb-4 display-4 text-primary">Detalles de perro</h1>
-    <div class="row">
-        <div class="col-md-4 d-flex align-items-center justify-content-center">
-            <img src="@Model.Url" alt="" class="img-fluid rounded shadow" style="height: 300px; object-fit: contain; background-color: #f0f8ff;">
-        </div>
-        <div class="col-md-4">
-            <div class="card shadow border-info mb-3">
-                <div class="card-body">
-                    <h5 class="card-title text-info">Información General</h5>
-                    <p class="card-text">
-                        <strong>Altura:</strong> @Model.Height, <strong>Ancho:</strong> @Model.Width
-                    </p>
+    <h1 class="text-center mb-4 display-4 text-primary">Detalles de la Raza de Perro</h1>
+    @if (Model != null && Model.Attributes != null)
+    {
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card shadow border-info mb-3">
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <img src="@Model.ImageUrl" class="card-img-top" alt="@Model.Attributes.Name" style="object-fit: contain; height: 200px; background-color: #f0f8ff;">
+                    }
+                    <div class="card-body">
+                        <h5 class="card-title text-info">Información General</h5>
+                        <p class="card-text">
+                            <strong>Nombre:</strong> @Model.Attributes.Name<br />
+                            <strong>Descripción:</strong> @Model.Attributes.Description<br />
+                            <strong>Vida:</strong> @Model.Attributes.Life?.Min - @Model.Attributes.Life?.Max años<br />
+                            <strong>Peso Macho:</strong> @Model.Attributes.Male_weight?.Min - @Model.Attributes.Male_weight?.Max kg<br />
+                            <strong>Peso Hembra:</strong> @Model.Attributes.Female_weight?.Min - @Model.Attributes.Female_weight?.Max kg<br />
+                            <strong>Hipoalergénico:</strong> @Model.Attributes.Hypoallergenic
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <p class="text-danger">No se encontraron detalles de la raza.</p>
+    }
     <div style="height: 70px"></div>
 </div>

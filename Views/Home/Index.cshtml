@@ -1,19 +1,22 @@
-﻿@model List<Evaluacion2.Models.Dog>
+﻿@model Evaluacion2.Models.BreedResponse
 
 <div class="container mt-4">
     <h1 class="text-center mb-4 display-4 text-info">Lista de Razas de Perros</h1>
     <div class="row row-cols-1 row-cols-md-3 g-4">
-        @foreach (var dog in Model)
+        @foreach (var breed in Model.Data)
         {
             <div class="col">
                 <div class="card h-100 shadow border-info">
-                    <img src="@dog.Url" class="card-img-top" alt="" style="object-fit: contain; height: 200px; background-color: #f0f8ff;">
+                    @if (!string.IsNullOrEmpty(breed.ImageUrl))
+                    {
+                        <img src="@breed.ImageUrl" class="card-img-top" alt="@breed.Attributes.Name" style="object-fit: contain; height: 200px; background-color: #f0f8ff;">
+                    }
                     <div class="card-body text-center">
-                        <h5 class="card-title mb-3 text-info">perro</h5>
+                        <h5 class="card-title mb-3 text-info">@breed.Attributes.Name</h5>
                         <p class="card-text text-muted">
-                            Altura: <span class="fw-bold text-dark">@dog.Height</span>, Ancho: <span class="fw-bold text-dark">@dog.Width</span>
+                            Vida: @breed.Attributes.Life.Min - @breed.Attributes.Life.Max años
                         </p>
-                        <a asp-action="Details" asp-route-id="@dog.Id" class="btn btn-outline-info">Ver Detalles</a>
+                        <a asp-action="Details" asp-route-id="@breed.Id" class="btn btn-outline-info">Ver Detalles</a>
                     </div>
                 </div>
             </div>
@@ -22,90 +25,55 @@
 
     <nav aria-label="Paginación de Razas de Perros">
         <ul class="pagination justify-content-center mt-4">
-            <li class="page-item @(Model.Any() && Model.First().CurrentPage == 1 ? "disabled" : "")">
-                <a class="page-link" asp-action="Index" asp-route-page="@(Model.Any() ? Model.First().CurrentPage - 1 : 1)" aria-label="Anterior">
+            <li class="page-item @(Model.Meta.Pagination.Current == 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-page="@(Model.Meta.Pagination.Current - 1)" aria-label="Anterior">
                     <span aria-hidden="true">&laquo;</span>
                 </a>
             </li>
 
-            @* Primer número *@
-            <li class="page-item @(Model.Any() && Model.First().CurrentPage == 1 ? "active" : "")">
+            <li class="page-item @(Model.Meta.Pagination.Current == 1 ? "active" : "")">
                 <a class="page-link" asp-action="Index" asp-route-page="1">1</a>
             </li>
 
-            @* Puntos suspensivos si la página actual está lejos del inicio *@
-            @if (Model.Any() && Model.First().CurrentPage > 6)
+            @if (Model.Meta.Pagination.Current > 6)
             {
                 <li class="page-item disabled">
                     <span class="page-link">...</span>
                 </li>
             }
 
-            @* Rango de 9 números dinámico *@
             @{
-                var startPage = Math.Max(2, Model.Any() ? Model.First().CurrentPage - 4 : 2);
-                var endPage = Math.Min(Model.Any() ? Model.First().TotalPages - 1 : 10, startPage + 8);
+                var startPage = Math.Max(2, Model.Meta.Pagination.Current - 4);
+                var endPage = Math.Min(Model.Meta.Pagination.Last - 1, startPage + 8);
                 startPage = Math.Max(2, endPage - 8);
 
                 for (int i = startPage; i <= endPage; i++)
                 {
-                    <li class="page-item @(Model.Any() && Model.First().CurrentPage == i ? "active" : "")">
+                    <li class="page-item @(Model.Meta.Pagination.Current == i ? "active" : "")">
                         <a class="page-link" asp-action="Index" asp-route-page="@i">@i</a>
                     </li>
                 }
             }
 
-            @* Puntos suspensivos si la página actual está lejos del final *@
-            @if (Model.Any() && Model.First().CurrentPage < Model.First().TotalPages - 5)
+            @if (Model.Meta.Pagination.Current < Model.Meta.Pagination.Last - 5)
             {
                 <li class="page-item disabled">
                     <span class="page-link">...</span>
                 </li>
             }
 
-            @* Último número *@
-            @if (Model.Any() && Model.First().TotalPages > 1)
+            @if (Model.Meta.Pagination.Last > 1)
             {
-                <li class="page-item @(Model.Any() && Model.First().CurrentPage == Model.First().TotalPages ? "active" : "")">
-                    <a class="page-link" asp-action="Index" asp-route-page="@Model.First().TotalPages">@Model.First().TotalPages</a>
+                <li class="page-item @(Model.Meta.Pagination.Current == Model.Meta.Pagination.Last ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@Model.Meta.Pagination.Last">@Model.Meta.Pagination.Last</a>
                 </li>
             }
 
-            <li class="page-item @(Model.Any() && Model.First().CurrentPage == (Model.Any() ? Model.First().TotalPages : 1) ? "disabled" : "")">
-                <a class="page-link" asp-action="Index" asp-route-page="@(Model.Any() ? Model.First().CurrentPage + 1 : 1)" aria-label="Siguiente">
+            <li class="page-item @(Model.Meta.Pagination.Current == Model.Meta.Pagination.Last ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-page="@(Model.Meta.Pagination.Current + 1)" aria-label="Siguiente">
                     <span aria-hidden="true">&raquo;</span>
                 </a>
             </li>
         </ul>
     </nav>
-    <div style="height: 60px"></div>
 </div>
-
-<style>
-    .card:hover {
-        transform: translateY(-5px);
-        transition: transform 0.3s ease;
-    }
-
-    .btn-outline-info {
-        color: black;
-        border-color: #0DCAF0;
-        background-color: white;
-    }
-
-        .btn-outline-info:hover, .btn-outline-info:focus, .btn-outline-info:active {
-            color: white;
-            background-color: #0DCAF0;
-            border-color: #0DCAF0;
-        }
-
-    .page-link {
-        color: black !important;
-    }
-
-    .page-item.active .page-link {
-        background-color: #0DCAF0 !important;
-        border-color: #0DCAF0 !important;
-        color: white !important;
-    }
-</style>
